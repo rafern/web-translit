@@ -1,6 +1,8 @@
 .DS_Store
 .env
 /node_modules/
+*.sublime-project
+*.sublime-workspace
 
 # React Router
 /.react-router/

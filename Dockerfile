@@ -1,22 +1,19 @@
-FROM node:24-alpine AS development-dependencies-env
+FROM ghcr.io/pnpm/pnpm:12.8.1 AS base
+RUN pnpm runtime set node 24 -g
+
+FROM base AS prod-deps
+WORKDIR /app
+COPY pnpm-lock.yaml /app/
+RUN pnpm fetch --prod
+
+FROM prod-deps AS build
+WORKDIR /app
 COPY . /app
-WORKDIR /app
-RUN npm ci
+RUN pnpm fetch
+RUN pnpm run build
 
-FROM node:24-alpine AS production-dependencies-env
-COPY ./package.json package-lock.json /app/
-WORKDIR /app
-RUN npm ci --omit=dev
-
-FROM node:24-alpine AS build-env
-COPY . /app/
-COPY --from=development-dependencies-env /app/node_modules /app/node_modules
-WORKDIR /app
-RUN npm run build
-
-FROM node:24-alpine
-COPY ./package.json package-lock.json /app/
-COPY --from=production-dependencies-env /app/node_modules /app/node_modules
-COPY --from=build-env /app/build /app/build
-WORKDIR /app
-CMD ["npm", "run", "start"]
+FROM base
+COPY --from=prod-deps /app/node_modules /app/node_modules
+COPY --from=build /app/build /app/build
+COPY package.json /app/
+CMD [ "pnpm", "start" ]
