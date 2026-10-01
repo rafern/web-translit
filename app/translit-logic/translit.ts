@@ -23,10 +23,47 @@ export interface TranslitResult {
     warns: Array<TranslitResultWarn>;
 }
 
-const enum Uppercasedness {
+const enum LetterCase {
     Lower,
     Upper,
-    Neither,
+    // for single letters: not a letter. for ranges: ambiguous (treat as lower)
+    Unknown,
+}
+
+function getLetterCase(letter: string): LetterCase {
+    if (letter == letter.toUpperCase()) {
+        return letter == letter.toLowerCase() ? LetterCase.Unknown : LetterCase.Upper;
+    } else {
+        return LetterCase.Lower;
+    }
+}
+
+function getWindowCase(window: string): LetterCase {
+    let firstCase: LetterCase | undefined;
+    let secondCase: LetterCase | undefined;
+
+    for (const char of window) {
+        const letterCase = getLetterCase(char);
+        if (letterCase === LetterCase.Unknown) continue;
+
+        if (firstCase === undefined) {
+            firstCase = letterCase;
+            continue;
+        }
+
+        if (secondCase === undefined) {
+            if (firstCase === LetterCase.Lower && letterCase !== firstCase) {
+                return LetterCase.Unknown;
+            }
+
+            secondCase = letterCase;
+            continue;
+        }
+
+        if (secondCase !== letterCase) return LetterCase.Unknown;
+    }
+
+    return firstCase ?? LetterCase.Lower;
 }
 
 export function translit(input: string, rules: TranslitRules): TranslitResult {
@@ -45,8 +82,23 @@ export function translit(input: string, rules: TranslitRules): TranslitResult {
                     const end = i + inLen;
                     const inWindow = input.substring(i, end);
                     if (rule.in == inWindow.toLowerCase()) {
-                        // TODO handle uppercasedness
-                        out += rule.out;
+                        switch(getWindowCase(inWindow)) {
+                            case LetterCase.Upper:
+                                out += rule.out.toUpperCase();
+                                break;
+                            case LetterCase.Unknown:
+                                warns.push({
+                                    start: i,
+                                    end,
+                                    context: {
+                                        type: TranslitResultWarnCtxType.AmbiguousCapitalisation,
+                                    }
+                                });
+                                // fall through
+                            case LetterCase.Lower:
+                                out += rule.out;
+                        }
+
                         matched = true;
                         i += inLen;
                         rem -= inLen;

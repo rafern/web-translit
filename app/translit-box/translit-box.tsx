@@ -6,9 +6,9 @@ const ROWS = 8;
 
 function OutBox({ text }: { text: string }) {
   if (text.length === 0) {
-    return <p className="min-h-48 text-slate-500 select-none italic">Transliterated text will show up here</p>
+    return <p className="h-48 text-slate-500 select-none italic">Transliterated text will show up here</p>
   } else {
-    return <p className="min-h-48">{text}</p>
+    return <p className="h-48">{text}</p>
   }
 }
 
@@ -21,19 +21,21 @@ export function TranslitBox() {
   }
 
   return (
-    <div className="flex flex-col text-16/2 md:flex-row gap-8 w-full text-slate-950">
-      <textarea
-        className="flex-1 bg-slate-50 p-1 placeholder:text-slate-500 placeholder:italic resize-none rounded-xs"
-        autoComplete="false"
-        autoCorrect="false"
-        spellCheck="false"
-        rows={ROWS}
-        value={inValue}
-        onChange={onTextChange}
-        placeholder='Type original text here'
-      />
-      <div className="flex-1 bg-slate-50 p-1 rounded-xs">
-        <OutBox text={result.text} />
+    <div className="flex flex-col text-16/2 gap-8 w-full">
+      <div className="flex flex-col md:flex-row gap-8 text-slate-950">
+        <textarea
+          className="flex-1 bg-slate-50 p-1 placeholder:text-slate-500 placeholder:italic resize-none rounded-xs"
+          autoComplete="false"
+          autoCorrect="false"
+          spellCheck="false"
+          rows={ROWS}
+          value={inValue}
+          onChange={onTextChange}
+          placeholder='Type original text here'
+        />
+        <div className="flex-1 bg-slate-50 p-1 rounded-xs overflow-y-auto overflow-x-hidden text-pretty wrap-break-word">
+          <OutBox text={result.text} />
+        </div>
       </div>
     </div>
   );
