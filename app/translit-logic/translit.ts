@@ -3,6 +3,7 @@ import { compileRules, type TranslitRules } from './rule';
 export const enum TranslitResultWarnCtxType {
     AmbiguousMapping,
     AmbiguousCapitalisation,
+    NoMatch,
 }
 
 export type TranslitResultWarnCtx = {
@@ -10,6 +11,8 @@ export type TranslitResultWarnCtx = {
     candidates: Array<string>;
 } | {
     type: TranslitResultWarnCtxType.AmbiguousCapitalisation;
+} | {
+    type: TranslitResultWarnCtxType.NoMatch;
 }
 
 export interface TranslitResultWarn {
@@ -18,9 +21,16 @@ export interface TranslitResultWarn {
     context: TranslitResultWarnCtx;
 }
 
+export interface TranslitResultRange {
+    start: number;
+    end: number;
+    warnIdxs: Array<number>;
+}
+
 export interface TranslitResult {
     text: string;
     warns: Array<TranslitResultWarn>;
+    ranges: Array<TranslitResultRange>;
 }
 
 const enum LetterCase {
@@ -64,6 +74,19 @@ function getWindowCase(window: string): LetterCase {
     }
 
     return firstCase ?? LetterCase.Lower;
+}
+
+function tryCutRange(ranges: Array<TranslitResultRange>, rangeIdx: number, cutIdx: number) {
+    const range = ranges[rangeIdx];
+    if (cutIdx <= range.start || cutIdx >= range.end) return;
+
+    ranges.splice(rangeIdx + 1, 0, {
+        start: cutIdx,
+        end: range.end,
+        warnIdxs: [...range.warnIdxs],
+    });
+
+    range.end = cutIdx;
 }
 
 export function translit(input: string, rules: TranslitRules): TranslitResult {
@@ -114,11 +137,56 @@ export function translit(input: string, rules: TranslitRules): TranslitResult {
         }
 
         if (!matched) {
+            // TODO what about numbers and symbols? should they warn?
+            const warnCount = warns.length;
+            let needsWarn = true;
+            if (warnCount > 0) {
+                const lastWarn = warns[warnCount - 1];
+                if (lastWarn.end === i && lastWarn.context.type === TranslitResultWarnCtxType.NoMatch) {
+                    lastWarn.end = i + 1;
+                    needsWarn = false;
+                }
+            }
+
+            if (needsWarn) {
+                warns.push({
+                    start: i,
+                    end: i + 1,
+                    context: {
+                        type: TranslitResultWarnCtxType.NoMatch,
+                    }
+                });
+            }
+
             out += input[i++];
             rem--;
-            // TODO add warning for no match? what about numbers and symbols?
         }
     }
 
-    return { text: out, warns };
+    const ranges: Array<TranslitResultRange> = [
+        { start: 0, end: out.length, warnIdxs: [] },
+    ];
+
+    const warnCount = warns.length;
+    for (let w = 0; w < warnCount; w++) {
+        const warn = warns[w];
+
+        for (let r = 0; r < ranges.length; r++) {
+            const range = ranges[r];
+            if (warn.end <= range.start) break;
+
+            /// XXX modifying ranges array as its being iterated. it's fine in
+            //      this case since i mutate the element in the current index
+            //      instead of replacing, and insertions are done AFTER this
+            //      index
+            tryCutRange(ranges, r, warn.start);
+            tryCutRange(ranges, r, warn.end);
+
+            if (range.start >= warn.start && range.end <= warn.end) {
+                range.warnIdxs.push(w);
+            }
+        }
+    }
+
+    return { text: out, warns, ranges };
 }
