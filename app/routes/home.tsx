@@ -1,13 +1,16 @@
 import type { Route } from "./+types/home";
-import { Welcome } from "../welcome/welcome";
+import { TranslitBox } from "../translit-box/translit-box";
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "New React Router App" },
-    { name: "description", content: "Welcome to React Router!" },
+    { title: "Web Translit" },
+    { name: "description", content: "Self-hosted transliteration tool for the web" },
   ];
 }
 
 export default function Home() {
-  return <Welcome />;
+  return <main className="flex flex-col items-center justify-center pt-8 pb-4 px-8 gap-8">
+    <h1 className="text-4xl">Web Translit</h1>
+    <TranslitBox />
+  </main>;
 }
