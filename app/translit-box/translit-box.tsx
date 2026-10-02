@@ -1,5 +1,6 @@
-import { useState, type ChangeEvent } from 'react';
-import { TRANSLIT_RULES_NONSTANDARD_LATIN_RUCYRRILIC } from '~/translit-logic/builtin-rules';
+import { useState, type ChangeEvent, useMemo } from 'react';
+import { TRANSLIT_RULES_NONSTANDARD_LATIN_RUCYRILLIC } from '~/translit-logic/builtin-rules';
+import { compileRules } from '~/translit-logic/rule';
 import { translit, type TranslitResult } from '~/translit-logic/translit';
 
 const ROWS = 8;
@@ -12,9 +13,9 @@ function OutBoxText({ result }: { result: TranslitResult }) {
     const spans: Array<React.JSX.Element> = [];
 
     for (const range of result.ranges) {
-      // TODO handle spaces and newlines properly
       const spanText = result.text.substring(range.start, range.end);
-      spans.push(<span className={range.warnIdxs.length > 0 ? 'underline decoration-wavy decoration-amber-500' : ''}>{spanText}</span>);
+      const className = range.warnIdxs.length > 0 ? 'underline decoration-wavy decoration-amber-500' : '';
+      spans.push(<span className={className}>{spanText}</span>);
     }
 
     return <p className="h-48">{spans}</p>;
@@ -24,7 +25,7 @@ function OutBoxText({ result }: { result: TranslitResult }) {
 function OutBox({ result }: { result: TranslitResult }) {
   // FIXME how do you make the "select all" action (ctrl+a) select only text in
   //       this div? do i just give up and add a "copy text" button?
-  return <div className="flex-1 bg-slate-50 p-1 rounded-xs overflow-y-auto overflow-x-hidden text-pretty wrap-break-word">
+  return <div className="flex-1 bg-slate-50 p-1 rounded-xs overflow-y-auto overflow-x-hidden text-pretty wrap-break-word whitespace-pre-wrap">
     <OutBoxText result={result}/>
   </div>
 }
@@ -43,7 +44,10 @@ function WarnBox({ result }: { result: TranslitResult }) {
 
 export function TranslitBox() {
   const [inValue, setInValue] = useState('');
-  const result = translit(inValue, TRANSLIT_RULES_NONSTANDARD_LATIN_RUCYRRILIC);
+  // TODO settable rules
+  const [rules, _setRules] = useState(TRANSLIT_RULES_NONSTANDARD_LATIN_RUCYRILLIC);
+  const compRules = useMemo(() => compileRules(rules), [rules]);
+  const result = useMemo(() => translit(inValue, compRules), [inValue, compRules]);
 
   function onTextChange(e: ChangeEvent<HTMLTextAreaElement, HTMLTextAreaElement>) {
     setInValue(e.target.value);

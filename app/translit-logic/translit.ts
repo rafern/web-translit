@@ -1,4 +1,5 @@
-import { compileRules, type TranslitRules } from './rule';
+import { type TranslitCompiledRules } from './rule';
+import { hasCodePointsInUnitWindow } from './unicode';
 
 export const enum TranslitResultWarnCtxType {
     AmbiguousMapping,
@@ -89,73 +90,85 @@ function tryCutRange(ranges: Array<TranslitResultRange>, rangeIdx: number, cutId
     range.end = cutIdx;
 }
 
-export function translit(input: string, rules: TranslitRules): TranslitResult {
+export function translit(input: string, rules: TranslitCompiledRules): TranslitResult {
     let out: string = '';
-    let compRules = compileRules(rules);
     const warns: Array<TranslitResultWarn> = [];
 
+    // XXX must normalize to decomposed form so that accented letters can get
+    //     transliterated properly
+    input = input.normalize('NFD');
     const len = input.length;
-    // TODO ranges with warnings (for squiggly lines and reasons on hover)
     for (let i = 0, rem = len; i < len;) {
         let matched = false;
-        for (const bucket of compRules) {
+        for (const bucket of rules.buckets) {
             const inLen = bucket.inLen;
-            if (inLen <= rem) {
-                for (const rule of bucket.rules) {
-                    const end = i + inLen;
-                    const inWindow = input.substring(i, end);
-                    if (rule.in == inWindow.toLowerCase()) {
-                        switch(getWindowCase(inWindow)) {
-                            case LetterCase.Upper:
-                                out += rule.out.toUpperCase();
-                                break;
-                            case LetterCase.Unknown:
-                                warns.push({
-                                    start: i,
-                                    end,
-                                    context: {
-                                        type: TranslitResultWarnCtxType.AmbiguousCapitalisation,
-                                    }
-                                });
-                                // fall through
-                            case LetterCase.Lower:
-                                out += rule.out;
-                        }
 
-                        matched = true;
-                        i += inLen;
-                        rem -= inLen;
+            if (inLen > rem) continue;
+            if (!hasCodePointsInUnitWindow(input, i, inLen)) continue;
 
-                        // TODO keep going to detect ambiguous matches
-                        // TODO make it optional for faster matches?
-                        break;
+            const end = i + inLen;
+            const inWindow = input.substring(i, end);
+            const inWindowLower = inWindow.toLowerCase();
+
+            for (const rule of bucket.rules) {
+                if (rule.in === inWindowLower) {
+                    switch(getWindowCase(inWindow)) {
+                        case LetterCase.Upper:
+                            out += rule.out.toUpperCase();
+                            break;
+                        case LetterCase.Unknown:
+                            warns.push({
+                                start: i,
+                                end,
+                                context: {
+                                    type: TranslitResultWarnCtxType.AmbiguousCapitalisation,
+                                }
+                            });
+                            // fall through
+                        case LetterCase.Lower:
+                            out += rule.out;
                     }
-                }
 
-                if (matched) break;
+                    matched = true;
+                    i += inLen;
+                    rem -= inLen;
+
+                    // TODO keep going to detect ambiguous matches
+                    // TODO make it optional for faster matches?
+                    break;
+                }
             }
+
+            if (matched) break;
         }
 
         if (!matched) {
-            // TODO what about numbers and symbols? should they warn?
-            const warnCount = warns.length;
-            let needsWarn = true;
-            if (warnCount > 0) {
-                const lastWarn = warns[warnCount - 1];
-                if (lastWarn.end === i && lastWarn.context.type === TranslitResultWarnCtxType.NoMatch) {
-                    lastWarn.end = i + 1;
-                    needsWarn = false;
-                }
-            }
+            const codePoint = input[i].codePointAt(0)!;
+            for (const range of rules.inCodePointRanges) {
+                if (range.start > codePoint) break;
 
-            if (needsWarn) {
-                warns.push({
-                    start: i,
-                    end: i + 1,
-                    context: {
-                        type: TranslitResultWarnCtxType.NoMatch,
+                if (codePoint >= range.start && codePoint < range.end) {
+                    const warnCount = warns.length;
+                    let needsWarn = true;
+                    if (warnCount > 0) {
+                        const lastWarn = warns[warnCount - 1];
+                        if (lastWarn.end === i && lastWarn.context.type === TranslitResultWarnCtxType.NoMatch) {
+                            lastWarn.end = i + 1;
+                            needsWarn = false;
+                        }
                     }
-                });
+
+                    if (needsWarn) {
+                        warns.push({
+                            start: i,
+                            end: i + 1,
+                            context: {
+                                type: TranslitResultWarnCtxType.NoMatch,
+                            }
+                        });
+                    }
+                    break;
+                }
             }
 
             out += input[i++];
