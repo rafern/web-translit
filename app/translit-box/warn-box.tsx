@@ -1,7 +1,33 @@
+import { useEffect, useRef } from 'react';
 import { TranslitResultWarnCtxType, type TranslitResult } from '~/translit-logic/translit';
+import { type SelectedWarns, type WarnSelectCallback } from '~/utils/callbacks';
 import { extractNewlines, fancyCharIdxRange, fancyJoin } from '~/utils/text';
 
-export function WarnBox({ result }: { result: TranslitResult }) {
+function WarnBoxEntry({ warnIdx, content, selectedWarns, setSelectedWarns }: { warnIdx: number, content: string, selectedWarns: SelectedWarns, setSelectedWarns: WarnSelectCallback }) {
+  const focusRef = useRef(null);
+  useEffect(() => {
+    if (selectedWarns.indexOf(warnIdx) !== -1) {
+      // FIXME: how do you avoid a cast here?
+      (focusRef.current! as HTMLDivElement).scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+      });
+    }
+  }, [warnIdx, selectedWarns]);
+
+  let className = 'text-amber-600 border-amber-600 border-1 rounded-md px-1 py-1 text-base/4';
+  if (selectedWarns.indexOf(warnIdx) !== -1) {
+    className += ' bg-amber-200';
+  } else {
+    className += ' bg-amber-100';
+  }
+
+  return <div className={className} ref={focusRef} onMouseEnter={() => setSelectedWarns([warnIdx])} onMouseLeave={() => setSelectedWarns([])}>
+    {content}
+  </div>
+}
+
+export function WarnBox({ result, selectedWarns, setSelectedWarns }: { result: TranslitResult, selectedWarns: SelectedWarns, setSelectedWarns: WarnSelectCallback }) {
   const children: Array<React.JSX.Element> = [];
 
   if (result.warns.length === 0) {
@@ -30,7 +56,13 @@ export function WarnBox({ result }: { result: TranslitResult }) {
           msg = 'Unknown warning';
       }
 
-      children.push(<div className='text-amber-600 bg-amber-100 border-amber-600 border-1 rounded-md px-1 py-1 text-base/4' key={'warn-' + w}>{`${fancyCharIdxRange(warn.start, warn.end, newlines)}: ${msg}`}</div>);
+      children.push(<WarnBoxEntry
+        key={'warn-' + w}
+        warnIdx={w}
+        content={`${fancyCharIdxRange(warn.start, warn.end, newlines)}: ${msg}`}
+        selectedWarns={selectedWarns}
+        setSelectedWarns={setSelectedWarns}
+      />);
     }
   }
 
