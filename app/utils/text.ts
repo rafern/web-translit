@@ -25,7 +25,7 @@ export function charIdxToPos(idx: number, newlines: ReadonlyArray<number>): [lin
     const newlineCount = newlines.length;
     if (newlineCount === 0) return [1, idx + 1];
 
-    let line = newlineCount - 1;
+    let line = newlineCount;
     for (let l = 0; l < newlineCount; l++) {
         if (newlines[l] >= idx) {
             line = l;
@@ -43,6 +43,9 @@ export function fancyCharIdx(idx: number, newlines: ReadonlyArray<number>): stri
 }
 
 export function fancyCharIdxRange(startIdx: number, endIdx: number, newlines: ReadonlyArray<number>): string {
+    // FIXME this needs to somehow do columns based on graphemes, not code units
+    //       or code points. transliterate "y" to "й" to see why (the range says
+    //       it spans 2 characters but it looks like one due to the accent)
     const [sLine, sCol] = charIdxToPos(startIdx, newlines);
     const [eLine, eCol] = charIdxToPos(endIdx - 1, newlines);
 

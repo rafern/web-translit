@@ -117,6 +117,8 @@ export function translit(input: string, rules: TranslitCompiledRules): TranslitR
 
             for (const rule of bucket.rules) {
                 if (rule.in === inWindowLower) {
+                    // TODO allow overriding which one matches (use warning's
+                    //      input range to decide where to insert the override)
                     const firstMatch = matches.length === 0;
                     if (firstMatch) matchInLen = inLen;
 
