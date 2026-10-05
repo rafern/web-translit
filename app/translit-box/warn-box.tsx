@@ -27,7 +27,7 @@ export function WarnBox({ result }: { result: TranslitResult }) {
           msg = 'No match for this input sequence, but the mapping expects this script. Is this a typo?';
           break;
         default:
-          msg = 'Unknown error';
+          msg = 'Unknown warning';
       }
 
       children.push(<div className='text-amber-600 bg-amber-100 border-amber-600 border-1 rounded-md px-1 py-1 text-base/4' key={'warn-' + w}>{`${fancyCharIdxRange(warn.start, warn.end, newlines)}: ${msg}`}</div>);
