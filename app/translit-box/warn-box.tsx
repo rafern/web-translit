@@ -59,7 +59,7 @@ export function WarnBox({ result, selectedWarns, setSelectedWarns }: { result: T
       children.push(<WarnBoxEntry
         key={'warn-' + w}
         warnIdx={w}
-        content={`${fancyCharIdxRange(warn.start, warn.end, newlines)}: ${msg}`}
+        content={`${fancyCharIdxRange(warn.outStart, warn.outEnd, newlines)}: ${msg}`}
         selectedWarns={selectedWarns}
         setSelectedWarns={setSelectedWarns}
       />);

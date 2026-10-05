@@ -1,5 +1,5 @@
 import { type TranslitCompiledRules } from './rule';
-import { hasCodePointsInUnitWindow } from './unicode';
+import { getNumericCodePointUnitCount, hasCodePointsInUnitWindow } from '../utils/unicode';
 
 export const enum TranslitResultWarnCtxType {
     AmbiguousMapping,
@@ -17,8 +17,10 @@ export type TranslitResultWarnCtx = {
 }
 
 export interface TranslitResultWarn {
-    start: number;
-    end: number;
+    inStart: number;
+    inEnd: number;
+    outStart: number;
+    outEnd: number;
     context: TranslitResultWarnCtx;
 }
 
@@ -91,6 +93,7 @@ function tryCutRange(ranges: Array<TranslitResultRange>, rangeIdx: number, cutId
 }
 
 export function translit(input: string, rules: TranslitCompiledRules): TranslitResult {
+    // TODO configurable warnings (for performance reasons)
     let out: string = '';
     const warns: Array<TranslitResultWarn> = [];
 
@@ -99,7 +102,9 @@ export function translit(input: string, rules: TranslitCompiledRules): TranslitR
     input = input.normalize('NFD');
     const len = input.length;
     for (let i = 0, rem = len; i < len;) {
-        let matched = false;
+        const matches: Array<string> = [];
+        let matchInLen = 0;
+
         for (const bucket of rules.buckets) {
             const inLen = bucket.inLen;
 
@@ -112,38 +117,38 @@ export function translit(input: string, rules: TranslitCompiledRules): TranslitR
 
             for (const rule of bucket.rules) {
                 if (rule.in === inWindowLower) {
+                    const firstMatch = matches.length === 0;
+                    if (firstMatch) matchInLen = inLen;
+
                     switch(getWindowCase(inWindow)) {
                         case LetterCase.Upper:
-                            out += rule.out.toUpperCase();
+                            matches.push(rule.out.toUpperCase());
                             break;
                         case LetterCase.Unknown:
-                            warns.push({
-                                start: i,
-                                end,
-                                context: {
-                                    type: TranslitResultWarnCtxType.AmbiguousCapitalisation,
-                                }
-                            });
+                            if (firstMatch) {
+                                const outLen = out.length;
+                                warns.push({
+                                    inStart: i,
+                                    inEnd: end,
+                                    outStart: outLen,
+                                    outEnd: outLen + rule.out.length,
+                                    context: {
+                                        type: TranslitResultWarnCtxType.AmbiguousCapitalisation,
+                                    }
+                                });
+                            }
                             // fall through
                         case LetterCase.Lower:
-                            out += rule.out;
+                            matches.push(rule.out);
                     }
-
-                    matched = true;
-                    i += inLen;
-                    rem -= inLen;
-
-                    // TODO keep going to detect ambiguous matches
-                    // TODO make it optional for faster matches?
-                    break;
                 }
             }
-
-            if (matched) break;
         }
 
-        if (!matched) {
+        if (matches.length === 0) {
             const codePoint = input[i].codePointAt(0)!;
+            const inConsumeAmount = getNumericCodePointUnitCount(codePoint);
+
             for (const range of rules.inCodePointRanges) {
                 if (range.start > codePoint) break;
 
@@ -152,16 +157,19 @@ export function translit(input: string, rules: TranslitCompiledRules): TranslitR
                     let needsWarn = true;
                     if (warnCount > 0) {
                         const lastWarn = warns[warnCount - 1];
-                        if (lastWarn.end === i && lastWarn.context.type === TranslitResultWarnCtxType.NoMatch) {
-                            lastWarn.end = i + 1;
+                        if (lastWarn.inEnd === i && lastWarn.context.type === TranslitResultWarnCtxType.NoMatch) {
+                            lastWarn.inEnd = i + inConsumeAmount;
                             needsWarn = false;
                         }
                     }
 
                     if (needsWarn) {
+                        const outLen = out.length;
                         warns.push({
-                            start: i,
-                            end: i + 1,
+                            inStart: i,
+                            inEnd: i + inConsumeAmount,
+                            outStart: outLen,
+                            outEnd: outLen + inConsumeAmount,
                             context: {
                                 type: TranslitResultWarnCtxType.NoMatch,
                             }
@@ -171,8 +179,27 @@ export function translit(input: string, rules: TranslitCompiledRules): TranslitR
                 }
             }
 
-            out += input[i++];
-            rem--;
+            out += input.substring(i, i + inConsumeAmount);
+            i += inConsumeAmount;
+            rem -= inConsumeAmount;
+        } else {
+            if (matches.length > 1) {
+                const outLen = out.length;
+                warns.push({
+                    inStart: i,
+                    inEnd: i + matchInLen,
+                    outStart: outLen,
+                    outEnd: outLen + matches[0].length,
+                    context: {
+                        type: TranslitResultWarnCtxType.AmbiguousMapping,
+                        candidates: matches,
+                    }
+                });
+            }
+
+            out += matches[0];
+            i += matchInLen;
+            rem -= matchInLen;
         }
     }
 
@@ -186,16 +213,16 @@ export function translit(input: string, rules: TranslitCompiledRules): TranslitR
 
         for (let r = 0; r < ranges.length; r++) {
             const range = ranges[r];
-            if (warn.end <= range.start) break;
+            if (warn.outEnd <= range.start) break;
 
             /// XXX modifying ranges array as its being iterated. it's fine in
             //      this case since i mutate the element in the current index
             //      instead of replacing, and insertions are done AFTER this
             //      index
-            tryCutRange(ranges, r, warn.start);
-            tryCutRange(ranges, r, warn.end);
+            tryCutRange(ranges, r, warn.outStart);
+            tryCutRange(ranges, r, warn.outEnd);
 
-            if (range.start >= warn.start && range.end <= warn.end) {
+            if (range.start >= warn.outStart && range.end <= warn.outEnd) {
                 range.warnIdxs.push(w);
             }
         }

@@ -1,7 +1,11 @@
+export function getNumericCodePointUnitCount(codePoint: number) {
+    return String.fromCodePoint(codePoint).length;
+}
+
 export function getCodePointUnitCount(str: string, idx: number) {
     const codePoint = str.codePointAt(idx);
     if (codePoint === undefined) return 0;
-    return String.fromCodePoint(codePoint).length;
+    return getNumericCodePointUnitCount(codePoint);
 }
 
 export function hasCodePointsInUnitWindow(str: string, idx: number, windowSize: number) {
