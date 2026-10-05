@@ -1,46 +1,9 @@
 import { useState, type ChangeEvent, useMemo } from 'react';
 import { TRANSLIT_RULES_NONSTANDARD_LATIN_RUCYRILLIC } from '~/translit-logic/builtin-rules';
 import { compileRules } from '~/translit-logic/rule';
-import { translit, type TranslitResult } from '~/translit-logic/translit';
-
-const ROWS = 8;
-
-function OutBoxText({ result }: { result: TranslitResult }) {
-  if (result.text.length === 0) {
-    return <p className="h-48 text-slate-500 select-none italic">Transliterated text will show up here</p>
-  } else {
-    // FIXME: Each child in a list should have a unique "key" prop
-    const spans: Array<React.JSX.Element> = [];
-
-    for (const range of result.ranges) {
-      const spanText = result.text.substring(range.start, range.end);
-      const className = range.warnIdxs.length > 0 ? 'underline decoration-wavy decoration-amber-500' : '';
-      spans.push(<span className={className}>{spanText}</span>);
-    }
-
-    return <p className="h-48">{spans}</p>;
-  }
-}
-
-function OutBox({ result }: { result: TranslitResult }) {
-  // FIXME how do you make the "select all" action (ctrl+a) select only text in
-  //       this div? do i just give up and add a "copy text" button?
-  return <div className="flex-1 bg-slate-50 p-1 rounded-xs overflow-y-auto overflow-x-hidden text-pretty wrap-break-word whitespace-pre-wrap">
-    <OutBoxText result={result}/>
-  </div>
-}
-
-function WarnBox({ result }: { result: TranslitResult }) {
-  if (result.text.length === 0) return;
-
-  if (result.warns.length === 0) {
-    return <p>Transliterated with no warnings</p>;
-  } else {
-    return <p>Transliterated with {result.warns.length} warning{result.warns.length === 1 ? '' : 's'}:</p>;
-  }
-
-  // TODO list warnings
-}
+import { translit } from '~/translit-logic/translit';
+import { OutBox } from './out-box';
+import { WarnBox } from './warn-box';
 
 export function TranslitBox() {
   const [inValue, setInValue] = useState('');
@@ -54,14 +17,13 @@ export function TranslitBox() {
   }
 
   return (
-    <article className="flex flex-col text-16/2 gap-8 w-full">
-      <div className="flex flex-col md:flex-row gap-8 text-slate-950">
+    <article className="flex flex-1 flex-col gap-8 w-full overflow-y-hidden">
+      <div className="flex flex-2 flex-col md:flex-row gap-8 text-slate-950 overflow-y-hidden">
         <textarea
           className="flex-1 bg-slate-50 p-1 placeholder:text-slate-500 placeholder:italic resize-none rounded-xs"
           autoComplete="false"
           autoCorrect="false"
           spellCheck="false"
-          rows={ROWS}
           value={inValue}
           onChange={onTextChange}
           placeholder='Type original text here'

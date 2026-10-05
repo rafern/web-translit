@@ -9,7 +9,7 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function Home() {
-  return <main className="flex flex-col items-center justify-center pt-8 pb-4 px-8 gap-8">
+  return <main className="flex flex-col items-center pt-8 pb-4 px-8 gap-8 h-full">
     <h1 className="text-4xl">Web Translit</h1>
     <TranslitBox />
   </main>;
