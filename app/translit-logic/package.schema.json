@@ -1,0 +1,150 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Package",
+    "description": "A file with transliteration rules and related data",
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["id", "name"],
+    "properties": {
+        "id": {
+            "description": "A unique ID for this package. Data inside this package which can be referenced will be namespaced to this ID. For example, a unicode block group with ID 'latin-letters' in a package with ID 'builtin' can be referenced via the string 'builtin:latin-letters",
+            "type": "string",
+            "pattern": "^[a-z-]+$"
+        },
+        "name": {
+            "description": "A user-friendly name for this package",
+            "type": "string",
+            "minLength": 1
+        },
+        "description": {
+            "description": "An optional description of the contents of the package, for users",
+            "type": "string",
+            "minLength": 1
+        },
+        "blockGroups": {
+            "description": "Groups of Unicode blocks (or subsets of blocks) to be referenced by rules, to know whether an input with no matches should be treated as a warning",
+            "type": "object",
+            "additionalProperties": false,
+            "patternProperties": {
+                "^[a-z0-9-]+$": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["name", "blocks"],
+                    "properties": {
+                        "name": {
+                            "description": "A user-friendly name for this block group (e.g. 'Latin letters')",
+                            "type": "string",
+                            "minLength": 1
+                        },
+                        "note": {
+                            "description": "A note, usually denoting the purpose of this block group",
+                            "type": "string",
+                            "minLength": 1
+                        },
+                        "blocks": {
+                            "type": "array",
+                            "items": {
+                                "description": "A Unicode block (or subset of a block) which contains ranges of code points",
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": ["name", "ranges"],
+                                "properties": {
+                                    "name": {
+                                        "description": "A user-friendly name for this block (e.g. 'Latin Extended-C'). Should match the actual Unicode block name, but doesn't have to. You could technically have a single big block with all the code point ranges, but this is discouraged, as it makes it hard for the user to know which Unicode blocks are used",
+                                        "type": "string",
+                                        "minLength": 1
+                                    },
+                                    "ranges": {
+                                        "description": "The numeric ranges of all code points used in this block. You can have an empty ranges list to denote that a block was considered, but had nothing related to what this block group wanted (e.g. a Latin block only had modifier code points, but this block group wants letters)",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "array",
+                                            "additionalItems": false,
+                                            "minItems": 2,
+                                            "maxItems": 2,
+                                            "items": [
+                                                {
+                                                    "description": "The inclusive start of the code point range. For example, ASCII 'A' would be 65",
+                                                    "type": "number"
+                                                },
+                                                {
+                                                    "description": "The inclusive end of the code point range. For example, ASCII 'Z' would be 90",
+                                                    "type": "number"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "rules": {
+            "description": "Rules that transform a sequence of code points. Both inputs and rules are normalized to NFD form, which means that letters with an accent will be transformed, even if your rule only has a rule for a letter without an accent",
+            "type": "object",
+            "additionalProperties": false,
+            "patternProperties": {
+                "^[a-z0-9-]+$": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["name", "map", "inBlockGroups", "outBlockGroups"],
+                    "properties": {
+                        "name": {
+                            "description": "A user-friendly name for these transliteration rules (e.g. 'Non-standard Latin to Russian Cyrillic')",
+                            "type": "string",
+                            "minLength": 1
+                        },
+                        "description": {
+                            "description": "An optional description of the transliteration rules. Should contain the purpose of the rules and a source if this is an existing scheme",
+                            "type": "string",
+                            "minLength": 1
+                        },
+                        "map": {
+                            "description": "The actual transliteration table/map. Case-insensitive, but usually lowercase. Supports arbitrary code point sequences",
+                            "type": "array",
+                            "minItems": 1,
+                            "items": {
+                                "description": "A 2-tuple containing a single rule",
+                                "type": "array",
+                                "additionalItems": false,
+                                "minItems": 2,
+                                "maxItems": 2,
+                                "items": [
+                                    {
+                                        "description": "The case-insensitive input code point sequence (e.g. 'shch')",
+                                        "type": "string",
+                                        "minLength": 1
+                                    },
+                                    {
+                                        "description": "The case-insensitive output code point sequence (e.g. 'щ'). Can be an empty string (e.g. you want to eliminate soft signs, so you map 'ь' to nothing)",
+                                        "type": "string"
+                                    }
+                                ]
+                            }
+                        },
+                        "inBlockGroups": {
+                            "description": "A list of block groups that these rules expect as the input. If an input sequence has a code point in this group, but doesn't map to anything, then a warning is shown, as this usually indicates a typo. Can be empty if you don't want these rules to generate these types of warnings, although this isn't recommended. Should be generous but not all-encompassing (e.g. rules which transliterate Latin to Cyrillic should use a group with all the Latin letters as the input, but not numbers, modifiers, symbols, etc...)",
+                            "type": "array",
+                            "items": {
+                                "description": "A namespaced ID pointing to a block group (e.g. 'builtin:latin-letters')",
+                                "type": "string",
+                                "pattern": "^[a-z-]+:[a-z0-9-]+$"
+                            }
+                        },
+                        "outBlockGroups": {
+                            "description": "Same as inBlockGroups, but for outputs. This might seem useless, as warnings are generated for input sequences, but this will be used as the input for automatically reversed rules",
+                            "type": "array",
+                            "items": {
+                                "description": "A namespaced ID pointing to a block group (e.g. 'builtin:cyrillic-letters')",
+                                "type": "string",
+                                "pattern": "^[a-z-]+:[a-z0-9-]+$"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -116,7 +116,7 @@ export function translit(input: string, rules: TranslitCompiledRules): TranslitR
             const inWindowLower = inWindow.toLowerCase();
 
             for (const rule of bucket.rules) {
-                if (rule.in === inWindowLower) {
+                if (rule[0] === inWindowLower) {
                     // TODO allow overriding which one matches (use warning's
                     //      input range to decide where to insert the override)
                     const firstMatch = matches.length === 0;
@@ -124,7 +124,7 @@ export function translit(input: string, rules: TranslitCompiledRules): TranslitR
 
                     switch(getWindowCase(inWindow)) {
                         case LetterCase.Upper:
-                            matches.push(rule.out.toUpperCase());
+                            matches.push(rule[1].toUpperCase());
                             break;
                         case LetterCase.Unknown:
                             if (firstMatch) {
@@ -133,7 +133,7 @@ export function translit(input: string, rules: TranslitCompiledRules): TranslitR
                                     inStart: i,
                                     inEnd: end,
                                     outStart: outLen,
-                                    outEnd: outLen + rule.out.length,
+                                    outEnd: outLen + rule[1].length,
                                     context: {
                                         type: TranslitResultWarnCtxType.AmbiguousCapitalisation,
                                     }
@@ -141,7 +141,7 @@ export function translit(input: string, rules: TranslitCompiledRules): TranslitR
                             }
                             // fall through
                         case LetterCase.Lower:
-                            matches.push(rule.out);
+                            matches.push(rule[1]);
                     }
                 }
             }

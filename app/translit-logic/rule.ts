@@ -1,16 +1,11 @@
-export interface TranslitRule {
-    in: string;
-    out: string;
-}
+import type { TranslitPackage } from "./package";
 
-export interface TranslitCodePointRange {
-    // range are inclusive at both start and end indices
-    start: number;
-    end: number;
-}
+export type TranslitRule = [input: string, output: string];
 
 // TODO a decision tree would be faster for big rulesets
 export interface TranslitRules {
+    name: string,
+    description: string,
     map: ReadonlyArray<TranslitRule>;
     // these are just for knowing when to show errors. for example, if a ruleset
     // uses latin as the input, then the whole latin LETTERS code point ranges
@@ -19,11 +14,11 @@ export interface TranslitRules {
     // without also showing warnings for punctuation, numbers, an unrelated
     // script like traditional chinese that you don't want to transliterate,
     // etc...
-    inCodePointRanges: ReadonlyArray<TranslitCodePointRange>;
+    inBlockGroups: ReadonlyArray<string>;
     // output ranges are provided for the same reason as above, as rules are
     // intended to be somewhat reversible (there will probably be conflicts but
     // the software should let you do it)
-    outCodePointRanges: ReadonlyArray<TranslitCodePointRange>;
+    outBlockGroups: ReadonlyArray<string>;
 }
 
 export interface TranslitRuleBucket {
@@ -43,50 +38,71 @@ export interface TranslitCompiledRules {
     outCodePointRanges: ReadonlyArray<TranslitCompiledCodePointRange>;
 };
 
-function compileCodePointRanges(ranges: ReadonlyArray<TranslitCodePointRange>): Array<TranslitCompiledCodePointRange> {
+function compileCodePointRanges(blockGroups: ReadonlyArray<string>, packages: Record<string, TranslitPackage>): Array<TranslitCompiledCodePointRange> {
     const compiled: Array<TranslitCompiledCodePointRange> = [];
 
-    for (const range of ranges) {
-        const newRange: TranslitCompiledCodePointRange = {
-            start: range.start,
-            end: range.end + 1,
-        };
-
-        let needsPush = true;
-        for (let c = 0; c < compiled.length; c++) {
-            const compRange = compiled[c];
-            if (newRange.end < compRange.start) {
-                compiled.splice(c, 0, newRange);
-                needsPush = false;
-                break;
-            }
-
-            if (newRange.start > compRange.end) continue;
-
-            compRange.start = Math.min(compRange.start, newRange.start);
-            compRange.end = Math.max(compRange.end, newRange.end);
-            needsPush = false;
-
-            // XXX hard to understand code (sorry). this tries to merge the
-            //     current range with the next range, until it can't anymore
-            let otherRange: TranslitCompiledCodePointRange;
-            while (c + 1 < compiled.length && (otherRange = compiled[c + 1]).start <= compRange.end) {
-                compRange.end = Math.max(compRange.end, otherRange.end);
-                compiled.splice(c + 1, 1);
-            }
-
-            break;
+    for (const namespacedBlockGroupID of blockGroups) {
+        const colonIdx = namespacedBlockGroupID.indexOf(':');
+        if (colonIdx === -1) {
+            throw new Error(`Invalid block group ID "${namespacedBlockGroupID}"`);
         }
 
-        if (needsPush) {
-            compiled.push(newRange);
+        const packageID = namespacedBlockGroupID.substring(0, colonIdx);
+        const pkg = packages[packageID];
+        if (!pkg) {
+            throw new Error(`Package with ID "${packageID}" not found`);
+        }
+
+        const blockGroupID = namespacedBlockGroupID.substring(colonIdx + 1);
+        const blockGroup = pkg.blockGroups?.[blockGroupID];
+        if (!blockGroup) {
+            throw new Error(`Package "${packageID}" has no block group "${blockGroupID}"`);
+        }
+
+        for (const block of blockGroup.blocks) {
+            for (const range of block.ranges) {
+                const newRange: TranslitCompiledCodePointRange = {
+                    start: range[0],
+                    end: range[1] + 1,
+                };
+
+                let needsPush = true;
+                for (let c = 0; c < compiled.length; c++) {
+                    const compRange = compiled[c];
+                    if (newRange.end < compRange.start) {
+                        compiled.splice(c, 0, newRange);
+                        needsPush = false;
+                        break;
+                    }
+
+                    if (newRange.start > compRange.end) continue;
+
+                    compRange.start = Math.min(compRange.start, newRange.start);
+                    compRange.end = Math.max(compRange.end, newRange.end);
+                    needsPush = false;
+
+                    // XXX hard to understand code (sorry). this tries to merge the
+                    //     current range with the next range, until it can't anymore
+                    let otherRange: TranslitCompiledCodePointRange;
+                    while (c + 1 < compiled.length && (otherRange = compiled[c + 1]).start <= compRange.end) {
+                        compRange.end = Math.max(compRange.end, otherRange.end);
+                        compiled.splice(c + 1, 1);
+                    }
+
+                    break;
+                }
+
+                if (needsPush) {
+                    compiled.push(newRange);
+                }
+            }
         }
     }
 
     return compiled;
 }
 
-export function compileRules(rules: TranslitRules): TranslitCompiledRules {
+export function compileRules(rules: TranslitRules, packages: Record<string, TranslitPackage>): TranslitCompiledRules {
     type BuilderBucket = { inLen: number, rules: Array<TranslitRule> };
     const buckets: Array<BuilderBucket> = [];
 
@@ -95,12 +111,12 @@ export function compileRules(rules: TranslitRules): TranslitCompiledRules {
         //     A with an accent will be able to be transliterated to another
         //     script, also with an accent, without having to make rules for
         //     every variation of the base letter)
-        const ruleNorm: TranslitRule = {
-            in: rule.in.normalize('NFD'),
-            out: rule.out.normalize('NFD'),
-        };
+        const ruleNorm: TranslitRule = [
+            rule[0].normalize('NFD'),
+            rule[1].normalize('NFD')
+        ];
 
-        const inLen = ruleNorm.in.length;
+        const inLen = ruleNorm[0].length;
         let bucket: BuilderBucket | undefined;
         let bucketInsertPos = 0;
         for (; bucketInsertPos < buckets.length; bucketInsertPos++) {
@@ -121,21 +137,23 @@ export function compileRules(rules: TranslitRules): TranslitCompiledRules {
 
     return {
         buckets,
-        inCodePointRanges: compileCodePointRanges(rules.inCodePointRanges),
-        outCodePointRanges: compileCodePointRanges(rules.outCodePointRanges),
+        inCodePointRanges: compileCodePointRanges(rules.inBlockGroups, packages),
+        outCodePointRanges: compileCodePointRanges(rules.outBlockGroups, packages),
     };
 }
 
 export function invertRules(rules: TranslitRules): TranslitRules {
     const invertedMap: Array<TranslitRule> = [];
     for (const rule of rules.map) {
-        invertedMap.push({ in: rule.out, out: rule.in });
+        invertedMap.push([ rule[1], rule[0] ]);
     }
 
     return {
+        name: `Inverse of "${rules.name}"`,
+        description: `Naive inversion of the "${rules.name}" rules. Original description:\n${rules.description}`,
         map: invertedMap,
         // TODO: clone?
-        inCodePointRanges: rules.outCodePointRanges,
-        outCodePointRanges: rules.inCodePointRanges,
+        inBlockGroups: rules.outBlockGroups,
+        outBlockGroups: rules.inBlockGroups,
     };
 }

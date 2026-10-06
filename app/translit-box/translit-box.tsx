@@ -1,17 +1,18 @@
 import { useState, type ChangeEvent, useMemo } from 'react';
-import { TRANSLIT_RULES_NONSTANDARD_LATIN_RUCYRILLIC } from '~/translit-logic/builtin-rules';
 import { compileRules } from '~/translit-logic/rule';
 import { translit } from '~/translit-logic/translit';
 import { OutBox } from './out-box';
 import { WarnBox } from './warn-box';
 import { type SelectedWarns } from '~/utils/callbacks';
+import { type TranslitPackage } from '~/translit-logic/package';
 
-export function TranslitBox() {
+export function TranslitBox({ packages }: { packages: Record<string, TranslitPackage> }) {
   const [inValue, setInValue] = useState('');
   const [selectedWarns, setSelectedWarns] = useState<SelectedWarns>([]);
   // TODO settable rules
-  const [rules, _setRules] = useState(TRANSLIT_RULES_NONSTANDARD_LATIN_RUCYRILLIC);
-  const compRules = useMemo(() => compileRules(rules), [rules]);
+  const [rules, _setRules] = useState(packages['builtin'].rules!['nonstd-latin-rucyrillic']);
+  // TODO change on `packages` too?
+  const compRules = useMemo(() => compileRules(rules, packages), [rules]);
   const result = useMemo(() => translit(inValue, compRules), [inValue, compRules]);
 
   function onTextChange(e: ChangeEvent<HTMLTextAreaElement, HTMLTextAreaElement>) {
