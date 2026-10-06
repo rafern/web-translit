@@ -62,3 +62,42 @@ export const TRANSLIT_RULES_NONSTANDARD_LATIN_RUCYRILLIC: TranslitRules = {
 };
 
 export const TRANSLIT_RULES_NONSTANDARD_RUCYRILLIC_LATIN = invertRules(TRANSLIT_RULES_NONSTANDARD_LATIN_RUCYRILLIC);
+
+export const TRANSLIT_RULES_CYRILLISCH: TranslitRules = {
+    map: [
+        { in: 'а', out: 'a' },
+        { in: 'б', out: 'b' },
+        { in: 'ч', out: 'ch' },
+        { in: 'д', out: 'd' },
+        { in: 'е', out: 'e' },
+        { in: 'ф', out: 'f' },
+        { in: 'г', out: 'g' },
+        { in: 'х', out: 'h' },
+        { in: 'и', out: 'i' },
+        { in: 'џ', out: 'j' },
+        { in: 'к', out: 'k' },
+        { in: 'л', out: 'l' },
+        { in: 'м', out: 'm' },
+        { in: 'н', out: 'n' },
+        { in: 'о', out: 'o' },
+        { in: 'п', out: 'p' },
+        { in: 'р', out: 'r' },
+        { in: 'с', out: 's' },
+        { in: 'ш', out: 'sch' },
+        { in: 'т', out: 't' },
+        { in: 'у', out: 'u' },
+        { in: 'в', out: 'v' },
+        { in: 'ў', out: 'w' },
+        { in: 'қ', out: 'x' },
+        { in: 'ј', out: 'y' },
+        { in: 'з', out: 'z' },
+        { in: 'э', out: 'ä' },
+        { in: 'ң', out: 'ng' },
+        { in: 'ц', out: 'ts' },
+        { in: 'ж', out: 'zh' },
+        { in: 'ћ', out: 'th' },
+        { in: 'ђ', out: 'dh' },
+    ],
+    inCodePointRanges: TRANSLIT_CODEPOINTS_LATIN_LETTERS,
+    outCodePointRanges: TRANSLIT_CODEPOINTS_CYRILLIC_LETTERS,
+};
