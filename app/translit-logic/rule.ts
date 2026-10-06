@@ -125,3 +125,17 @@ export function compileRules(rules: TranslitRules): TranslitCompiledRules {
         outCodePointRanges: compileCodePointRanges(rules.outCodePointRanges),
     };
 }
+
+export function invertRules(rules: TranslitRules): TranslitRules {
+    const invertedMap: Array<TranslitRule> = [];
+    for (const rule of rules.map) {
+        invertedMap.push({ in: rule.out, out: rule.in });
+    }
+
+    return {
+        map: invertedMap,
+        // TODO: clone?
+        inCodePointRanges: rules.outCodePointRanges,
+        outCodePointRanges: rules.inCodePointRanges,
+    };
+}

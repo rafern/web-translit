@@ -1,5 +1,5 @@
 import { TRANSLIT_CODEPOINTS_CYRILLIC_LETTERS, TRANSLIT_CODEPOINTS_LATIN_LETTERS } from './builtin-codepoints';
-import { type TranslitRules } from './rule';
+import { invertRules, type TranslitRules } from './rule';
 
 // non-standard rules which can be used with a US keyboard. uses the "common
 // transliteration" column from:
@@ -60,3 +60,5 @@ export const TRANSLIT_RULES_NONSTANDARD_LATIN_RUCYRILLIC: TranslitRules = {
     inCodePointRanges: TRANSLIT_CODEPOINTS_LATIN_LETTERS,
     outCodePointRanges: TRANSLIT_CODEPOINTS_CYRILLIC_LETTERS,
 };
+
+export const TRANSLIT_RULES_NONSTANDARD_RUCYRILLIC_LATIN = invertRules(TRANSLIT_RULES_NONSTANDARD_LATIN_RUCYRILLIC);
