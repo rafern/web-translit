@@ -1,5 +1,5 @@
-import { type TranslitCompiledRules } from './rule';
-import { getNumericCodePointUnitCount, hasCodePointsInUnitWindow } from '../utils/unicode';
+import { type TranslitCompiledRules } from "./rule";
+import { getNumericCodePointUnitCount, hasCodePointsInUnitWindow } from "../utils/unicode";
 
 export const enum TranslitResultWarnCtxType {
   AmbiguousMapping,
@@ -7,14 +7,17 @@ export const enum TranslitResultWarnCtxType {
   NoMatch,
 }
 
-export type TranslitResultWarnCtx = {
-  type: TranslitResultWarnCtxType.AmbiguousMapping;
-  candidates: Array<string>;
-} | {
-  type: TranslitResultWarnCtxType.AmbiguousCapitalisation;
-} | {
-  type: TranslitResultWarnCtxType.NoMatch;
-}
+export type TranslitResultWarnCtx =
+  | {
+      type: TranslitResultWarnCtxType.AmbiguousMapping;
+      candidates: Array<string>;
+    }
+  | {
+      type: TranslitResultWarnCtxType.AmbiguousCapitalisation;
+    }
+  | {
+      type: TranslitResultWarnCtxType.NoMatch;
+    };
 
 export interface TranslitResultWarn {
   inStart: number;
@@ -94,12 +97,12 @@ function tryCutRange(ranges: Array<TranslitResultRange>, rangeIdx: number, cutId
 
 export function translit(input: string, rules: TranslitCompiledRules): TranslitResult {
   // TODO configurable warnings (for performance reasons)
-  let out: string = '';
+  let out: string = "";
   const warns: Array<TranslitResultWarn> = [];
 
   // XXX must normalize to decomposed form so that accented letters can get
   //     transliterated properly
-  input = input.normalize('NFD');
+  input = input.normalize("NFD");
   const len = input.length;
   for (let i = 0, rem = len; i < len;) {
     const matches: Array<string> = [];
@@ -122,7 +125,7 @@ export function translit(input: string, rules: TranslitCompiledRules): TranslitR
           const firstMatch = matches.length === 0;
           if (firstMatch) matchInLen = inLen;
 
-          switch(getWindowCase(inWindow)) {
+          switch (getWindowCase(inWindow)) {
             case LetterCase.Upper:
               matches.push(rule[1].toUpperCase());
               break;
@@ -136,10 +139,10 @@ export function translit(input: string, rules: TranslitCompiledRules): TranslitR
                   outEnd: outLen + rule[1].length,
                   context: {
                     type: TranslitResultWarnCtxType.AmbiguousCapitalisation,
-                  }
+                  },
                 });
               }
-              // fall through
+            // fall through
             case LetterCase.Lower:
               matches.push(rule[1]);
           }
@@ -159,7 +162,10 @@ export function translit(input: string, rules: TranslitCompiledRules): TranslitR
           let needsWarn = true;
           if (warnCount > 0) {
             const lastWarn = warns[warnCount - 1];
-            if (lastWarn.inEnd === i && lastWarn.context.type === TranslitResultWarnCtxType.NoMatch) {
+            if (
+              lastWarn.inEnd === i &&
+              lastWarn.context.type === TranslitResultWarnCtxType.NoMatch
+            ) {
               lastWarn.inEnd = i + inConsumeAmount;
               needsWarn = false;
             }
@@ -174,7 +180,7 @@ export function translit(input: string, rules: TranslitCompiledRules): TranslitR
               outEnd: outLen + inConsumeAmount,
               context: {
                 type: TranslitResultWarnCtxType.NoMatch,
-              }
+              },
             });
           }
           break;
@@ -195,7 +201,7 @@ export function translit(input: string, rules: TranslitCompiledRules): TranslitR
           context: {
             type: TranslitResultWarnCtxType.AmbiguousMapping,
             candidates: matches,
-          }
+          },
         });
       }
 
@@ -205,9 +211,7 @@ export function translit(input: string, rules: TranslitCompiledRules): TranslitR
     }
   }
 
-  const ranges: Array<TranslitResultRange> = [
-    { start: 0, end: out.length, warnIdxs: [] },
-  ];
+  const ranges: Array<TranslitResultRange> = [{ start: 0, end: out.length, warnIdxs: [] }];
 
   const warnCount = warns.length;
   for (let w = 0; w < warnCount; w++) {

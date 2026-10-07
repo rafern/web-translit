@@ -1,12 +1,12 @@
 import { INVERTED_NAMESPACE, type TranslitPackage } from "./package";
-import { pushError } from '~/utils/error';
+import { pushError } from "~/utils/error";
 
 export type TranslitRule = [input: string, output: string];
 
 // TODO a decision tree would be faster for big rulesets
 export interface TranslitRules {
-  name: string,
-  description: string,
+  name: string;
+  description: string;
   map: ReadonlyArray<TranslitRule>;
   // these are just for knowing when to show errors. for example, if a ruleset
   // uses latin as the input, then the whole latin LETTERS code point ranges
@@ -34,18 +34,21 @@ export interface TranslitCompiledCodePointRange {
 }
 
 export interface TranslitCompiledRules {
-  origRules: TranslitRules,
+  origRules: TranslitRules;
   buckets: ReadonlyArray<TranslitRuleBucket>;
   codePointRanges: ReadonlyArray<TranslitCompiledCodePointRange>;
-};
+}
 
 export type TranslitCompiledRulesCollection = Record<string, TranslitCompiledRules>;
 
-function compileCodePointRanges(blockGroups: ReadonlyArray<string>, packages: Record<string, TranslitPackage>): Array<TranslitCompiledCodePointRange> {
+function compileCodePointRanges(
+  blockGroups: ReadonlyArray<string>,
+  packages: Record<string, TranslitPackage>,
+): Array<TranslitCompiledCodePointRange> {
   const compiled: Array<TranslitCompiledCodePointRange> = [];
 
   for (const namespacedBlockGroupID of blockGroups) {
-    const colonIdx = namespacedBlockGroupID.indexOf(':');
+    const colonIdx = namespacedBlockGroupID.indexOf(":");
     if (colonIdx === -1) {
       throw new Error(`Invalid block group ID "${namespacedBlockGroupID}"`);
     }
@@ -105,8 +108,11 @@ function compileCodePointRanges(blockGroups: ReadonlyArray<string>, packages: Re
   return compiled;
 }
 
-export function compileRules(rules: TranslitRules, packages: Record<string, TranslitPackage>): TranslitCompiledRules {
-  type BuilderBucket = { inLen: number, rules: Array<TranslitRule> };
+export function compileRules(
+  rules: TranslitRules,
+  packages: Record<string, TranslitPackage>,
+): TranslitCompiledRules {
+  type BuilderBucket = { inLen: number; rules: Array<TranslitRule> };
   const buckets: Array<BuilderBucket> = [];
 
   for (const rule of rules.map) {
@@ -114,10 +120,7 @@ export function compileRules(rules: TranslitRules, packages: Record<string, Tran
     //     A with an accent will be able to be transliterated to another
     //     script, also with an accent, without having to make rules for
     //     every variation of the base letter)
-    const ruleNorm: TranslitRule = [
-      rule[0].normalize('NFD'),
-      rule[1].normalize('NFD')
-    ];
+    const ruleNorm: TranslitRule = [rule[0].normalize("NFD"), rule[1].normalize("NFD")];
 
     const inLen = ruleNorm[0].length;
     let bucket: BuilderBucket | undefined;
@@ -148,7 +151,7 @@ export function compileRules(rules: TranslitRules, packages: Record<string, Tran
 export function invertRules(rules: TranslitRules): TranslitRules {
   const invertedMap: Array<TranslitRule> = [];
   for (const rule of rules.map) {
-    invertedMap.push([ rule[1], rule[0] ]);
+    invertedMap.push([rule[1], rule[0]]);
   }
 
   return {
@@ -161,7 +164,13 @@ export function invertRules(rules: TranslitRules): TranslitRules {
   };
 }
 
-export function maybeCompileRulesInto(outCompRules: TranslitCompiledRulesCollection, outErrors: Array<string>, packageID: string, rulesID: string, packages: Record<string, TranslitPackage>): boolean {
+export function maybeCompileRulesInto(
+  outCompRules: TranslitCompiledRulesCollection,
+  outErrors: Array<string>,
+  packageID: string,
+  rulesID: string,
+  packages: Record<string, TranslitPackage>,
+): boolean {
   const pkg = packages[packageID];
   if (!pkg) {
     pushError(outErrors, `No package with ID "${packageID}"`);
@@ -182,8 +191,11 @@ export function maybeCompileRulesInto(outCompRules: TranslitCompiledRulesCollect
 
   try {
     outCompRules[namespacedID] = compileRules(rules, packages);
-    outCompRules[`${INVERTED_NAMESPACE}:${namespacedID}`] = compileRules(invertRules(rules), packages);
-  } catch(e) {
+    outCompRules[`${INVERTED_NAMESPACE}:${namespacedID}`] = compileRules(
+      invertRules(rules),
+      packages,
+    );
+  } catch (e) {
     pushError(outErrors, e);
     return false;
   }

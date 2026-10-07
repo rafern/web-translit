@@ -1,8 +1,8 @@
-import { type TranslitCodePointBlockGroup } from './block';
-import { type TranslitRules } from './rule';
-import packageSchema from './package.schema.json';
-import Ajv, { type JSONSchemaType } from 'ajv';
-import { pushError } from '~/utils/error';
+import { type TranslitCodePointBlockGroup } from "./block";
+import { type TranslitRules } from "./rule";
+import packageSchema from "./package.schema.json";
+import Ajv, { type JSONSchemaType } from "ajv";
+import { pushError } from "~/utils/error";
 
 const ajv = new Ajv();
 // HACK: need to force Ajv to accept the schema. not sure if it's because of
@@ -16,7 +16,7 @@ const ajv = new Ajv();
 //       schema
 const _validatePackage = ajv.compile(packageSchema as unknown as JSONSchemaType<TranslitPackage>);
 
-export const INVERTED_NAMESPACE = 'inverted';
+export const INVERTED_NAMESPACE = "inverted";
 
 export interface TranslitPackage {
   id: string;
@@ -44,11 +44,15 @@ export function parsePackage(str: string): TranslitPackage {
   return validatePackage(JSON.parse(str));
 }
 
-export function maybeValidatePackageInto(outPackages: TranslitPackages, outErrors: Array<string>, json: unknown): boolean {
+export function maybeValidatePackageInto(
+  outPackages: TranslitPackages,
+  outErrors: Array<string>,
+  json: unknown,
+): boolean {
   let pkg: TranslitPackage;
   try {
     pkg = validatePackage(json);
-  } catch(e) {
+  } catch (e) {
     pushError(outErrors, e);
     return false;
   }
@@ -62,11 +66,15 @@ export function maybeValidatePackageInto(outPackages: TranslitPackages, outError
   return true;
 }
 
-export function maybeParsePackageInto(outPackages: TranslitPackages, outErrors: Array<string>, str: string): boolean {
+export function maybeParsePackageInto(
+  outPackages: TranslitPackages,
+  outErrors: Array<string>,
+  str: string,
+): boolean {
   let json: unknown;
   try {
     json = JSON.parse(str);
-  } catch(e) {
+  } catch (e) {
     pushError(outErrors, e);
     return false;
   }
