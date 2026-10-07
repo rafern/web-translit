@@ -1,7 +1,7 @@
 import type { Route } from "./+types/home";
 import { ConfigurableTranslitBox } from "../components/configurable-translit-box";
 
-export function meta({}: Route.MetaArgs) {
+export function meta(_metaArgs: Route.MetaArgs) {
   return [
     { title: "Web Translit" },
     { name: "description", content: "Self-hosted transliteration tool for the web" },
