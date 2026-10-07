@@ -37,8 +37,8 @@ function OutBoxSpan({ range, text, selectedWarns, setSelectedWarns }: { range: T
   return <span ref={focusRef} className={className} onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}>{text}</span>;
 }
 
-function OutBoxText({ result, selectedWarns, setSelectedWarns }: { result: TranslitResult, selectedWarns: SelectedWarns, setSelectedWarns: WarnSelectCallback }) {
-  if (result.text.length === 0) {
+function OutBoxText({ result, selectedWarns, setSelectedWarns }: { result: TranslitResult | undefined, selectedWarns: SelectedWarns, setSelectedWarns: WarnSelectCallback }) {
+  if (!result || result.text.length === 0) {
     return <p className="text-slate-500 select-none italic">Transliterated text will show up here</p>
   } else {
     const spans: Array<React.JSX.Element> = [];
@@ -59,7 +59,7 @@ function OutBoxText({ result, selectedWarns, setSelectedWarns }: { result: Trans
   }
 }
 
-export function OutBox({ result, selectedWarns, setSelectedWarns }: { result: TranslitResult, selectedWarns: SelectedWarns, setSelectedWarns: WarnSelectCallback }) {
+export function OutBox({ result, selectedWarns, setSelectedWarns }: { result: TranslitResult | undefined, selectedWarns: SelectedWarns, setSelectedWarns: WarnSelectCallback }) {
   // FIXME how do you make the "select all" action (ctrl+a) select only text in
   //       this div? do i just give up and add a "copy text" button?
   return <div className="flex-1 bg-slate-50 p-1 rounded-xs overflow-y-auto overflow-x-hidden text-pretty wrap-break-word whitespace-pre-wrap">

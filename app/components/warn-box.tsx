@@ -27,10 +27,13 @@ function WarnBoxEntry({ warnIdx, content, selectedWarns, setSelectedWarns }: { w
   </div>
 }
 
-export function WarnBox({ result, selectedWarns, setSelectedWarns }: { result: TranslitResult, selectedWarns: SelectedWarns, setSelectedWarns: WarnSelectCallback }) {
+export function WarnBox({ result, selectedWarns, setSelectedWarns }: { result: TranslitResult | undefined, selectedWarns: SelectedWarns, setSelectedWarns: WarnSelectCallback }) {
   const children: Array<React.JSX.Element> = [];
 
-  if (result.warns.length === 0) {
+  // TODO display package system errors
+  if (!result) {
+    children.push(<p key='header' className='text-slate-500'>No rules selected, so no transliteration will be done</p>);
+  } else if (result.warns.length === 0) {
     const noWarnText = result.text.length === 0
       ? 'No text typed yet. Warnings will be displayed here'
       : 'Transliterated with no warnings';

@@ -1,4 +1,5 @@
-import type { TranslitPackage } from "./package";
+import { INVERTED_NAMESPACE, type TranslitPackage } from "./package";
+import { pushError } from '~/utils/error';
 
 export type TranslitRule = [input: string, output: string];
 
@@ -33,10 +34,12 @@ export interface TranslitCompiledCodePointRange {
 }
 
 export interface TranslitCompiledRules {
+    origRules: TranslitRules,
     buckets: ReadonlyArray<TranslitRuleBucket>;
-    inCodePointRanges: ReadonlyArray<TranslitCompiledCodePointRange>;
-    outCodePointRanges: ReadonlyArray<TranslitCompiledCodePointRange>;
+    codePointRanges: ReadonlyArray<TranslitCompiledCodePointRange>;
 };
+
+export type TranslitCompiledRulesCollection = Record<string, TranslitCompiledRules>;
 
 function compileCodePointRanges(blockGroups: ReadonlyArray<string>, packages: Record<string, TranslitPackage>): Array<TranslitCompiledCodePointRange> {
     const compiled: Array<TranslitCompiledCodePointRange> = [];
@@ -136,9 +139,9 @@ export function compileRules(rules: TranslitRules, packages: Record<string, Tran
     }
 
     return {
+        origRules: rules,
         buckets,
-        inCodePointRanges: compileCodePointRanges(rules.inBlockGroups, packages),
-        outCodePointRanges: compileCodePointRanges(rules.outBlockGroups, packages),
+        codePointRanges: compileCodePointRanges(rules.inBlockGroups, packages),
     };
 }
 
@@ -149,11 +152,41 @@ export function invertRules(rules: TranslitRules): TranslitRules {
     }
 
     return {
-        name: `Inverse of "${rules.name}"`,
+        name: `${rules.name} (inverted)`,
         description: `Naive inversion of the "${rules.name}" rules. Original description:\n${rules.description}`,
         map: invertedMap,
         // TODO: clone?
         inBlockGroups: rules.outBlockGroups,
         outBlockGroups: rules.inBlockGroups,
     };
+}
+
+export function maybeCompileRulesInto(outCompRules: TranslitCompiledRulesCollection, outErrors: Array<string>, packageID: string, rulesID: string, packages: Record<string, TranslitPackage>): boolean {
+    const pkg = packages[packageID];
+    if (!pkg) {
+        pushError(outErrors, `No package with ID "${packageID}"`);
+        return false;
+    }
+
+    const namespacedID = `${packageID}:${rulesID}`;
+    const rules = pkg.rules?.[rulesID];
+    if (!rules) {
+        pushError(outErrors, `No rules with ID "${namespacedID}"`);
+        return false;
+    }
+
+    if (Object.hasOwn(outCompRules, namespacedID)) {
+        pushError(outErrors, `Rules with ID "${namespacedID}" already compiled`);
+        return false;
+    }
+
+    try {
+        outCompRules[namespacedID] = compileRules(rules, packages);
+        outCompRules[`${INVERTED_NAMESPACE}:${namespacedID}`] = compileRules(invertRules(rules), packages);
+    } catch(e) {
+        pushError(outErrors, e);
+        return false;
+    }
+
+    return true;
 }

@@ -151,7 +151,7 @@ export function translit(input: string, rules: TranslitCompiledRules): TranslitR
             const codePoint = input[i].codePointAt(0)!;
             const inConsumeAmount = getNumericCodePointUnitCount(codePoint);
 
-            for (const range of rules.inCodePointRanges) {
+            for (const range of rules.codePointRanges) {
                 if (range.start > codePoint) break;
 
                 if (codePoint >= range.start && codePoint < range.end) {
