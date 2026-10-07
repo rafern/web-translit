@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+/*
+ * Copyright (C) 2026 Rafael Fernandes <rafern@protonmail.com>
+ */
+
 import builtin from "../translit-logic/builtin.json";
 import { useMemo, useState } from "react";
 import { type TranslitPackage, maybeValidatePackageInto } from "~/translit-logic/package";

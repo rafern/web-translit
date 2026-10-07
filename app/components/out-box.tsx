@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+/*
+ * Copyright (C) 2026 Rafael Fernandes <rafern@protonmail.com>
+ */
+
 import { useEffect, useRef } from "react";
 import { type TranslitResult, type TranslitResultRange } from "~/translit-logic/translit";
 import { type SelectedWarns, type WarnSelectCallback } from "~/utils/callbacks";

@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+/*
+ * Copyright (C) 2026 Rafael Fernandes <rafern@protonmail.com>
+ */
+
 import { type TranslitCodePointBlockGroup } from "./block";
 import { type TranslitRules } from "./rule";
 import packageSchema from "./package.schema.json";

@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+/*
+ * Copyright (C) 2026 Rafael Fernandes <rafern@protonmail.com>
+ */
+
 export function fancyJoin(
   array: ReadonlyArray<string>,
   transformer: (s: string) => string,
