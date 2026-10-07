@@ -218,8 +218,8 @@
         ["ћ", "th"],
         ["ђ", "dh"]
       ],
-      "inBlockGroups": ["builtin:latin-letters"],
-      "outBlockGroups": ["builtin:cyrillic-letters"]
+      "inBlockGroups": ["builtin:cyrillic-letters"],
+      "outBlockGroups": ["builtin:latin-letters"]
     }
   }
 }
