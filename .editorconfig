@@ -1,0 +1,12 @@
+root = true
+
+[*]
+end_of_line = lf
+insert_final_newline = true
+
+# prefer using 2 spaces instead of 4, since that's the standard for react (even
+# though i don't like it)
+[*.{js,ts,jsx,tsx}]
+charset = utf-8
+indent_style = space
+indent_size = 2

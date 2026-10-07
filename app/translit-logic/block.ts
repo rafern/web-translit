@@ -2,12 +2,12 @@
 export type TranslitCodePointBlockRange = [start: number, end: number];
 
 export interface TranslitCodePointBlock {
-    name: string;
-    ranges: ReadonlyArray<TranslitCodePointBlockRange>;
+  name: string;
+  ranges: ReadonlyArray<TranslitCodePointBlockRange>;
 }
 
 export interface TranslitCodePointBlockGroup {
-    name: string;
-    note?: string;
-    blocks: ReadonlyArray<TranslitCodePointBlock>;
+  name: string;
+  note?: string;
+  blocks: ReadonlyArray<TranslitCodePointBlock>;
 }
