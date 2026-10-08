@@ -2,6 +2,8 @@
 
 A transliteration tool for the web, intended to be self-hosted.
 
+Also hosted on Github Pages: https://rafern.github.io/web-translit/
+
 # Why?
 
 > TLDR: This is for people who want to translate text that is written in a
