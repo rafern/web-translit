@@ -13,8 +13,7 @@ jobs:
       - uses: pnpm/setup@v3
         with:
           runtime: node@24
-      - run: pnpm runtime set node 24 -g
-      - run: pnpm fetch
+      - run: echo "PUBLIC_BASE_PATH=/${{ github.event.repository.name }}/" > .env
       - run: pnpm run build
       - uses: actions/upload-pages-artifact@v3
         with:

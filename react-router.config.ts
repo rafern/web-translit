@@ -5,4 +5,5 @@ export default {
   ssr: false,
   // pre-rendering is just a nicety
   prerender: true,
+  basename: process.env.PUBLIC_BASE_PATH,
 } satisfies Config;
