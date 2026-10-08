@@ -8,14 +8,11 @@ jobs:
   build:
     environment: CI
     runs-on: ubuntu-26.04
-    strategy:
-      matrix:
-        node-version: [24]
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/setup@v3
         with:
-          runtime: node@${{ matrix.node }}
+          runtime: node@24
       - run: pnpm runtime set node 24 -g
       - run: pnpm fetch
       - run: pnpm run build
