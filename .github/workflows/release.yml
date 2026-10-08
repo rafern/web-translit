@@ -1,0 +1,39 @@
+name: Build and deploy demo to Github Pages
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    environment: CI
+    runs-on: ubuntu-26.04
+    strategy:
+      matrix:
+        node-version: [24]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/setup@v3
+        with:
+          runtime: node@${{ matrix.node }}
+      - run: pnpm runtime set node 24 -g
+      - run: pnpm fetch
+      - run: pnpm run build
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'build/client/'
+
+  deploy-demo:
+    if: startsWith(github.ref, 'refs/tags/releases/')
+    needs: build
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-26.04
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
