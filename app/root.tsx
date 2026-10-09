@@ -37,7 +37,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Meta />
         <Links />
       </head>
-      <body>
+      <body className="flex flex-col">
         {children}
         <ScrollRestoration />
         <Scripts />
@@ -47,7 +47,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  return <Outlet />;
+  return <>
+    <nav className="flex-none flex flex-row items-center w-full h-14 px-4 bg-slate-700">
+      <h1 className="text-4xl">Web Translit</h1>
+    </nav>
+    <main className="flex-1 flex flex-col overflow-y-hidden pt-8 pb-4 px-8">
+      <Outlet />
+    </main>
+  </>;
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {

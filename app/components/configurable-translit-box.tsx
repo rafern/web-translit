@@ -57,7 +57,7 @@ export function ConfigurableTranslitBox() {
   );
 
   return (
-    <article className="flex flex-1 flex-col gap-2 w-full overflow-y-hidden">
+    <article className="flex flex-col gap-2 w-full overflow-y-hidden">
       <label>
         Transliteration rules:
         <select value={selectedRulesID} onChange={(e) => setSelectedRulesID(e.target.value)}>
