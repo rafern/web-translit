@@ -107,7 +107,7 @@ export function OutBox({
   // FIXME how do you make the "select all" action (ctrl+a) select only text in
   //       this div? do i just give up and add a "copy text" button?
   return (
-    <div className="flex-1 bg-slate-50 p-1 rounded-xs overflow-y-auto overflow-x-hidden text-pretty wrap-break-word whitespace-pre-wrap">
+    <div className="flex-1 bg-slate-50 p-1 overflow-y-auto overflow-x-hidden text-pretty wrap-break-word whitespace-pre-wrap border-slate-500 border-1 rounded-md">
       <OutBoxText
         result={result}
         selectedWarns={selectedWarns}

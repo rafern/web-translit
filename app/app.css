@@ -21,3 +21,7 @@ body {
 
   height: 100vh;
 }
+
+#mobile-nav-container:hover > #mobile-nav-menu {
+  display: flex;
+}

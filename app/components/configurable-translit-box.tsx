@@ -60,7 +60,7 @@ export function ConfigurableTranslitBox() {
     <article className="flex-1 flex flex-col gap-2 w-full overflow-y-hidden">
       <label>
         Transliteration rules:
-        <select value={selectedRulesID} onChange={(e) => setSelectedRulesID(e.target.value)}>
+        <select className="max-w-full" value={selectedRulesID} onChange={(e) => setSelectedRulesID(e.target.value)}>
           {options}
         </select>
       </label>

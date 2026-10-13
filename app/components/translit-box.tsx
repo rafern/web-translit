@@ -30,7 +30,7 @@ export function TranslitBox({ compRules }: { compRules: TranslitCompiledRules | 
     <article className="flex flex-1 flex-col gap-8 w-full overflow-y-hidden">
       <div className="flex flex-2 flex-col md:flex-row gap-8 text-slate-950 overflow-y-hidden">
         <textarea
-          className="flex-1 bg-slate-50 p-1 placeholder:text-slate-500 placeholder:italic resize-none rounded-xs"
+          className="flex-1 bg-slate-50 p-1 placeholder:text-slate-500 placeholder:italic resize-none border-slate-500 border-1 rounded-md"
           autoComplete="false"
           autoCorrect="false"
           spellCheck="false"
