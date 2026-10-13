@@ -57,7 +57,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return <>
-    <nav className="flex-none flex flex-row items-center justify-between w-full h-14 px-4 bg-slate-700 shadow-md">
+    <nav className="flex-none flex flex-row items-center justify-between w-full h-14 px-4 bg-slate-700 shadow-md select-none">
       <h1 className="text-4xl text-white">Web Translit</h1>
       <ResponsiveNavButtons />
     </nav>
