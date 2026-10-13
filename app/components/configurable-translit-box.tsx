@@ -3,33 +3,12 @@
  * Copyright (C) 2026 Rafael Fernandes <rafern@protonmail.com>
  */
 
-import builtin from "../translit-logic/builtin.json";
 import { useMemo, useState } from "react";
-import { type TranslitPackage, maybeValidatePackageInto } from "~/translit-logic/package";
-import { type TranslitCompiledRules, maybeCompileRulesInto } from "~/translit-logic/rule";
+import { type TranslitPackagesState } from "~/translit-logic/package";
 import { TranslitBox } from "./translit-box";
 
-export function ConfigurableTranslitBox() {
+export function ConfigurableTranslitBox({ packagesState }: { packagesState: TranslitPackagesState }) {
   // TODO way to add a package from a file, and manage/inspect existing packages
-  const packagesState = useMemo(() => {
-    const packages: Record<string, TranslitPackage> = {};
-    const errors: Array<string> = [];
-    maybeValidatePackageInto(packages, errors, builtin);
-    // TODO load additional packages here (from localStorage?)
-
-    const allCompRules: Record<string, TranslitCompiledRules> = {};
-    for (const packageID of Object.getOwnPropertyNames(packages)) {
-      const pkg = packages[packageID];
-      if (!pkg.rules) continue;
-
-      for (const rulesID of Object.getOwnPropertyNames(pkg.rules!)) {
-        maybeCompileRulesInto(allCompRules, errors, packageID, rulesID, packages);
-      }
-    }
-
-    return { packages, errors, allCompRules };
-  }, []);
-
   const [selectedRulesID, setSelectedRulesID] = useState("none");
 
   const options: Array<React.JSX.Element> = [

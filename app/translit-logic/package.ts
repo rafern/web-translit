@@ -4,7 +4,7 @@
  */
 
 import { type TranslitCodePointBlockGroup } from "./block";
-import { type TranslitRules } from "./rule";
+import { maybeCompileRulesInto, type TranslitCompiledRules, type TranslitRules } from "./rule";
 import packageSchema from "./package.schema.json";
 import Ajv, { type JSONSchemaType } from "ajv";
 import { pushError } from "~/utils/error";
@@ -32,6 +32,12 @@ export interface TranslitPackage {
 }
 
 export type TranslitPackages = Record<string, TranslitPackage>;
+
+export interface TranslitPackagesState {
+  packages: Record<string, TranslitPackage>;
+  errors: Array<string>;
+  allCompRules: Record<string, TranslitCompiledRules>;
+}
 
 export function validatePackage(json: unknown): TranslitPackage {
   if (_validatePackage(json)) {
@@ -85,4 +91,29 @@ export function maybeParsePackageInto(
   }
 
   return maybeValidatePackageInto(outPackages, outErrors, json);
+}
+
+export function loadPackages(builtinJSONs?: ReadonlyArray<unknown>): TranslitPackagesState {
+    const packages: TranslitPackagesState["packages"] = {};
+    const errors: TranslitPackagesState["errors"] = [];
+
+    if (builtinJSONs) {
+      for (const json of builtinJSONs) {
+        maybeValidatePackageInto(packages, errors, json);
+      }
+    }
+
+    // TODO load additional packages here (from localStorage?)
+
+    const allCompRules: TranslitPackagesState["allCompRules"] = {};
+    for (const packageID of Object.getOwnPropertyNames(packages)) {
+      const pkg = packages[packageID];
+      if (!pkg.rules) continue;
+
+      for (const rulesID of Object.getOwnPropertyNames(pkg.rules!)) {
+        maybeCompileRulesInto(allCompRules, errors, packageID, rulesID, packages);
+      }
+    }
+
+    return { packages, errors, allCompRules };
 }
