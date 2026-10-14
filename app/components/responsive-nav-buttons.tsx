@@ -31,7 +31,7 @@ export function ResponsiveNavButtons() {
         {desktopButtons}
       </div>
       <div className="md:hidden h-full relative hover:bg-slate-600" id="mobile-nav-container">
-        <div className="h-full flex flex-col justify-center" id="mobile-nav-burger">
+        <div className="h-full flex flex-col justify-center text-white cursor-pointer" id="mobile-nav-burger">
           <i className="fa-solid fa-bars fa-2x"></i>
         </div>
         <div className="absolute right-0 overflow-hidden hidden flex-col border-slate-500 border-b-1 border-x-1 rounded-b-md" id="mobile-nav-menu">

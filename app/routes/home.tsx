@@ -24,6 +24,7 @@ export async function clientLoader({ context }: Route.ClientLoaderArgs) {
 }
 
 // TODO https://reactrouter.com/start/framework/route-module#hydratefallback
+// TODO web accessibility. at the very least make keyboard navigation possible
 
 export default function Home({ loaderData }: Route.ComponentProps) {
   return <ConfigurableTranslitBox packagesState={loaderData} />;
